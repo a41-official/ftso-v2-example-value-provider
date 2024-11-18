@@ -75,13 +75,13 @@ export class CcxtFeed implements BaseDataFeed {
         await loadExchange;
         this.logger.log(`Exchange ${exchangeName} initialized`);
       } catch (e) {
-        this.logger.warn(`Failed to load markets for ${exchangeName}, ignoring: ${e}`);
+        this.logger.warn(`Failed to load markets for exchange ${exchangeName}, ignoring: ${e}`);
         exchangeToSymbols.delete(exchangeName);
       }
     }
     this.initialized = true;
 
-    this.logger.log(`Initialization done, watching trades...`);
+    this.logger.log(`Initialization finished`);
     void this.watchTrades(exchangeToSymbols);
   }
 
@@ -101,54 +101,56 @@ export class CcxtFeed implements BaseDataFeed {
   private async watchTrades(exchangeToSymbols: Map<string, Set<string>>) {
     for (const [exchangeName, symbols] of exchangeToSymbols) {
       const exchange = this.exchangeByName.get(exchangeName);
-      if (exchange === undefined) continue;
+      if (exchange === undefined) {
+        this.logger.warn(`Exchange ${exchangeName} skipped`);
+        continue;
+      }
 
       const marketIds: string[] = [];
       for (const symbol of symbols) {
         const market = exchange.markets[symbol];
         if (market === undefined) {
-          this.logger.warn(`Market not found for ${symbol} on ${exchangeName}`);
+          this.logger.warn(`Market not found for ${symbol} on exchange ${exchangeName}`);
           continue;
         }
         marketIds.push(market.id);
       }
-      void this.watch(exchange, marketIds, exchangeName);
-    }
-  }
+      
+      this.logger.log(`Watching trades for ${marketIds} on exchange ${exchangeName}`);
 
-  private async watch(exchange: Exchange, marketIds: string[], exchangeName: string) {
-    this.logger.log(`Watching trades for ${marketIds} on exchange ${exchangeName}`);
-
-    if (exchange.has["watchTrades"]) {
-      // eslint-disable-next-line no-constant-condition
-      while (true) {
-        try {
-          const trades = await retry(
-            async () => exchange.watchTradesForSymbols(marketIds, null, 100),
-            RETRY_BACKOFF_MS
-          );
-          this.processTrades(trades, exchangeName);
-        } catch (e) {
-          this.logger.error(`Failed to watch trades for ${exchangeName}: ${e}`);
-          return;
-        }
-      }
-    } else if (exchange.has["fetchTrades"]) {
-      // eslint-disable-next-line no-constant-condition
-      while (true) {
-        try {
-          const trades: Trade[] = [];
-          for (const marketId of marketIds) {
-            const tradesForSymbol = await exchange.fetchTrades(marketId, null, 100);
-            trades.push(tradesForSymbol[tradesForSymbol.length - 1]);
+      if (exchange.has["watchTrades"]) {
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          try {
+            const trades = await retry(
+              async () => exchange.watchTradesForSymbols(marketIds, null, 100),
+              RETRY_BACKOFF_MS
+            );
+            this.processTrades(trades, exchangeName);
+          } catch (e) {
+            this.logger.error(`Failed to watch trades for exchange ${exchangeName}: ${e}`);
+            return;
           }
-          this.processTrades(trades, exchangeName);
-
-          await sleepFor(1000);
-        } catch (e) {
-          this.logger.error(`Failed to fetch trades for ${exchangeName}: ${e}`);
-          await sleepFor(10_000);
         }
+      } else if (exchange.has["fetchTrades"]) {
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          try {
+            const trades: Trade[] = [];
+            for (const marketId of marketIds) {
+              const tradesForSymbol = await exchange.fetchTrades(marketId, null, 100);
+              trades.push(tradesForSymbol[tradesForSymbol.length - 1]);
+            }
+            this.processTrades(trades, exchangeName);
+
+            await sleepFor(1000);
+          } catch (e) {
+            this.logger.error(`Failed to fetch trades for exchange ${exchangeName}: ${e}`);
+            await sleepFor(10_000);
+          }
+        }
+      } else {
+        this.logger.warn(`Watching trades method not found for exchange ${exchangeName}`);
       }
     }
   }
@@ -180,7 +182,10 @@ export class CcxtFeed implements BaseDataFeed {
     for (const source of config.sources) {
       const info = this.prices.get(source.symbol)?.get(source.exchange);
       // Skip if no price information is available
-      if (!info || info.amount === undefined) continue;
+      if (!info || info.amount === undefined) {
+        this.logger.warn(`Unable to retrieve price info for ${source.symbol} at exchange ${source.exchange}`);
+        continue;
+      }
 
       let price = info.price;
 
@@ -188,7 +193,7 @@ export class CcxtFeed implements BaseDataFeed {
       if (source.symbol.endsWith("USDT")) {
         if (usdtToUsd === undefined) usdtToUsd = await this.getFeedPrice(usdtToUsdFeedId);
         if (usdtToUsd === undefined) {
-          this.logger.warn(`Unable to retrieve USDT to USD conversion rate for ${source.symbol} at ${source.exchange}`);
+          this.logger.warn(`Unable to retrieve USDT to USD conversion rate for ${source.symbol} at exchange ${source.exchange}`);
           continue; // Skip this source if conversion rate is unavailable
         }
         price *= usdtToUsd;
