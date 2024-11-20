@@ -7,7 +7,10 @@ import { retry, sleepFor } from "src/utils/retry";
 type networks = "local-test" | "from-env" | "coston2" | "coston" | "songbird";
 
 const CONFIG_PREFIX = "src/config/";
-const RETRY_BACKOFF_MS = 10_000;
+const MAX_RETRIES = 3;
+const RETRY_BACKOFF_MS = 2_000;
+const VOTING_EPOCH_INTERVAL_SEC = 90;
+const VOTING_EPOCH_EARLY_OFFSET_SEC = 6;
 
 interface FeedConfig {
   feed: FeedId;
@@ -87,30 +90,49 @@ export class AggregatorFeed implements BaseDataFeed {
   }
 
   private async startPolling(coingekcoIds: string[]) {
-    this.logger.log(`Watching trades for ${coingekcoIds.length} on CoinGecko...`);
+    this.logger.log(`Watching markets for ${coingekcoIds.length} pairs on CoinGecko...`);
 
     // eslint-disable-next-line no-constant-condition
     while (true) {
       try {
         const markets = await retry(
-          async () =>
-            fetch(COINGECKO_API_URL + `coins/markets?vs_currency=usd&ids=${coingekcoIds.join(",")}`, {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json",
-                "x-cg-pro-api-key": process.env.COINGECKO_API_KEY,
-              },
-            }).then(response => response.json()),
-          RETRY_BACKOFF_MS
+          async () => {
+            const response = await fetch(
+              COINGECKO_API_URL + `coins/markets?vs_currency=usd&ids=${coingekcoIds.join(",")}`,
+              {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                  "x-cg-pro-api-key": process.env.COINGECKO_API_KEY,
+                },
+              }
+            );
+            if (response.ok === false) {
+              throw new Error(`Failed to get markets: ${response.statusText}`);
+            }
+            return response.json();
+          },
+          MAX_RETRIES,
+          RETRY_BACKOFF_MS,
+          this.logger
         );
 
         this.processMarkets(markets);
 
-        await sleepFor(90000);
+        this.logger.log(`Fetched ${markets.length} markets successfully`);
       } catch (e) {
-        this.logger.error(`Failed to fetch markets ${e}`);
+        this.logger.error(`${e}`);
         await sleepFor(10_000);
       }
+
+      // Calculate the delay to the next voting epoch. Aim to start polling before the epoch starts
+      const elapsed = secondsSinceMidnight();
+      const delay = VOTING_EPOCH_INTERVAL_SEC - (elapsed % VOTING_EPOCH_INTERVAL_SEC) - VOTING_EPOCH_EARLY_OFFSET_SEC;
+      const adjustedDelay = delay <= 0 ? delay + VOTING_EPOCH_INTERVAL_SEC : delay;
+
+      // Wait for the next voting epoch
+      this.logger.log(`Waiting ${adjustedDelay} seconds before starting polling...`);
+      await sleepFor(adjustedDelay * 1000);
     }
   }
 
@@ -161,4 +183,9 @@ function feedsEqual(a: FeedId, b: FeedId): boolean {
 
 function feedNameToCoingeckoSymbol(name: string): string {
   return name.replace("/USD", "").toLowerCase();
+}
+
+function secondsSinceMidnight(): number {
+  const now = new Date();
+  return now.getSeconds() + now.getMinutes() * 60 + now.getHours() * 3600;
 }
