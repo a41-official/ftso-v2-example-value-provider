@@ -5,6 +5,7 @@ import { CcxtFeed } from "./data-feeds/ccxt-provider-service";
 import { RandomFeed } from "./data-feeds/random-feed";
 import { BaseDataFeed } from "./data-feeds/base-feed";
 import { FixedFeed } from "./data-feeds/fixed-feed";
+import { AggregatorFeed } from "./data-feeds/aggregator-feed";
 
 @Module({
   imports: [],
@@ -19,6 +20,10 @@ import { FixedFeed } from "./data-feeds/fixed-feed";
           dataFeed = new FixedFeed();
         } else if (process.env.VALUE_PROVIDER_IMPL == "random") {
           dataFeed = new RandomFeed();
+        } else if (process.env.VALUE_PROVIDER_IMPL == "aggregator") {
+          const aggregatorFeed = new AggregatorFeed();
+          await aggregatorFeed.start();
+          dataFeed = aggregatorFeed;
         } else {
           const ccxtFeed = new CcxtFeed();
           await ccxtFeed.start();
