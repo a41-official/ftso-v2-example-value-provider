@@ -24,6 +24,13 @@ async function bootstrap() {
 
   app.setGlobalPrefix(basePath);
 
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  });
+  process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception thrown:', err);
+  });
+
   const PORT = process.env.VALUE_PROVIDER_CLIENT_PORT ? parseInt(process.env.VALUE_PROVIDER_CLIENT_PORT) : 3101;
   console.log(`Your example feed value provider for FTSO is available on PORT: ${PORT}`);
   console.log(`Open link: http://localhost:${PORT}/api-doc`);
