@@ -108,10 +108,6 @@
       {
         "exchange": "htx",
         "symbol": "AAVE/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "AAVE/USDT"
       }
     ]
   },
@@ -252,10 +248,6 @@
       {
         "exchange": "htx",
         "symbol": "ADA/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "ADA/USDT"
       }
     ]
   },
@@ -376,10 +368,6 @@
       {
         "exchange": "htx",
         "symbol": "ALGO/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "ALGO/USDT"
       }
     ]
   },
@@ -491,10 +479,6 @@
       },
       {
         "exchange": "htx",
-        "symbol": "ARB/USDT"
-      },
-      {
-        "exchange": "lbank",
         "symbol": "ARB/USDT"
       }
     ]
@@ -627,10 +611,6 @@
       },
       {
         "exchange": "htx",
-        "symbol": "ATOM/USDT"
-      },
-      {
-        "exchange": "lbank",
         "symbol": "ATOM/USDT"
       }
     ]
@@ -768,10 +748,6 @@
       {
         "exchange": "htx",
         "symbol": "AVAX/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "AVAX/USDT"
       }
     ]
   },
@@ -896,10 +872,6 @@
       {
         "exchange": "htx",
         "symbol": "BCH/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "BCH/USDT"
       }
     ]
   },
@@ -1008,10 +980,6 @@
       {
         "exchange": "htx",
         "symbol": "BNB/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "BNB/USDT"
       }
     ]
   },
@@ -1115,10 +1083,6 @@
       },
       {
         "exchange": "htx",
-        "symbol": "BONK/USDT"
-      },
-      {
-        "exchange": "lbank",
         "symbol": "BONK/USDT"
       }
     ]
@@ -1304,18 +1268,6 @@
       {
         "exchange": "htx",
         "symbol": "BTC/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "BTC/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "BTC/USDC"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "BTC/DAI"
       }
     ]
   },
@@ -1407,10 +1359,6 @@
       },
       {
         "exchange": "htx",
-        "symbol": "DAI/USDT"
-      },
-      {
-        "exchange": "lbank",
         "symbol": "DAI/USDT"
       }
     ]
@@ -1552,10 +1500,6 @@
       {
         "exchange": "htx",
         "symbol": "DOGE/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "DOGE/USDT"
       }
     ]
   },
@@ -1696,14 +1640,6 @@
       {
         "exchange": "htx",
         "symbol": "DOT/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "DOT/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "DOT/USDC"
       }
     ]
   },
@@ -1779,10 +1715,6 @@
       },
       {
         "exchange": "htx",
-        "symbol": "ENA/USDT"
-      },
-      {
-        "exchange": "lbank",
         "symbol": "ENA/USDT"
       }
     ]
@@ -1891,10 +1823,6 @@
       },
       {
         "exchange": "htx",
-        "symbol": "ETC/USDT"
-      },
-      {
-        "exchange": "lbank",
         "symbol": "ETC/USDT"
       }
     ]
@@ -2084,18 +2012,6 @@
       {
         "exchange": "htx",
         "symbol": "ETH/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "ETH/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "ETH/USDC"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "ETH/DAI"
       }
     ]
   },
@@ -2167,10 +2083,6 @@
       },
       {
         "exchange": "htx",
-        "symbol": "ETHFI/USDT"
-      },
-      {
-        "exchange": "lbank",
         "symbol": "ETHFI/USDT"
       }
     ]
@@ -2312,10 +2224,6 @@
       {
         "exchange": "htx",
         "symbol": "FET/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "FET/USDT"
       }
     ]
   },
@@ -2428,14 +2336,6 @@
       {
         "exchange": "htx",
         "symbol": "FIL/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "FIL/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "FIL/USDC"
       }
     ]
   },
@@ -2519,10 +2419,6 @@
       },
       {
         "exchange": "htx",
-        "symbol": "FLR/USDT"
-      },
-      {
-        "exchange": "lbank",
         "symbol": "FLR/USDT"
       }
     ]
@@ -2636,14 +2532,6 @@
       {
         "exchange": "htx",
         "symbol": "FTM/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "FTM/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "FTM/USDC"
       }
     ]
   },
@@ -2828,10 +2716,6 @@
       {
         "exchange": "htx",
         "symbol": "ICP/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "ICP/USDT"
       }
     ]
   },
@@ -2927,10 +2811,6 @@
       },
       {
         "exchange": "htx",
-        "symbol": "INJ/USDT"
-      },
-      {
-        "exchange": "lbank",
         "symbol": "INJ/USDT"
       }
     ]
@@ -3040,10 +2920,6 @@
       {
         "exchange": "htx",
         "symbol": "JUP/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "JUP/USDT"
       }
     ]
   },
@@ -3083,10 +2959,6 @@
       },
       {
         "exchange": "mexc",
-        "symbol": "LEO/USDT"
-      },
-      {
-        "exchange": "lbank",
         "symbol": "LEO/USDT"
       }
     ]
@@ -3224,10 +3096,6 @@
       {
         "exchange": "htx",
         "symbol": "LINK/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "LINK/USDT"
       }
     ]
   },
@@ -3352,14 +3220,6 @@
       {
         "exchange": "mexc",
         "symbol": "LTC/USDC"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "LTC/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "LTC/USDC"
       }
     ]
   },
@@ -3428,10 +3288,6 @@
       {
         "exchange": "coinbase",
         "symbol": "MATIC/USDC"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "MATIC/USDT"
       }
     ]
   },
@@ -3560,10 +3416,6 @@
       {
         "exchange": "htx",
         "symbol": "NEAR/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "NEAR/USDT"
       }
     ]
   },
@@ -3644,10 +3496,6 @@
       {
         "exchange": "mexc",
         "symbol": "NOT/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "NOT/USDT"
       }
     ]
   },
@@ -3727,10 +3575,6 @@
       },
       {
         "exchange": "htx",
-        "symbol": "ONDO/USDT"
-      },
-      {
-        "exchange": "lbank",
         "symbol": "ONDO/USDT"
       }
     ]
@@ -3832,10 +3676,6 @@
       {
         "exchange": "htx",
         "symbol": "PEPE/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "PEPE/USDT"
       }
     ]
   },
@@ -3932,10 +3772,6 @@
       {
         "exchange": "htx",
         "symbol": "POL/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "POL/USDT"
       }
     ]
   },
@@ -4003,10 +3839,6 @@
       },
       {
         "exchange": "htx",
-        "symbol": "PYTH/USDT"
-      },
-      {
-        "exchange": "lbank",
         "symbol": "PYTH/USDT"
       }
     ]
@@ -4087,10 +3919,6 @@
       },
       {
         "exchange": "mexc",
-        "symbol": "QNT/USDT"
-      },
-      {
-        "exchange": "lbank",
         "symbol": "QNT/USDT"
       }
     ]
@@ -4179,10 +4007,6 @@
       },
       {
         "exchange": "htx",
-        "symbol": "RENDER/USDT"
-      },
-      {
-        "exchange": "lbank",
         "symbol": "RENDER/USDT"
       }
     ]
@@ -4416,14 +4240,6 @@
       {
         "exchange": "htx",
         "symbol": "SHIB/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "SHIB/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "SHIB/USDC"
       }
     ]
   },
@@ -4568,14 +4384,6 @@
       {
         "exchange": "htx",
         "symbol": "SOL/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "SOL/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "SOL/USDC"
       }
     ]
   },
@@ -4684,10 +4492,6 @@
       {
         "exchange": "htx",
         "symbol": "SUI/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "SUI/USDT"
       }
     ]
   },
@@ -4731,10 +4535,6 @@
       },
       {
         "exchange": "mexc",
-        "symbol": "TAO/USDT"
-      },
-      {
-        "exchange": "lbank",
         "symbol": "TAO/USDT"
       }
     ]
@@ -4823,10 +4623,6 @@
       },
       {
         "exchange": "htx",
-        "symbol": "TON/USDT"
-      },
-      {
-        "exchange": "lbank",
         "symbol": "TON/USDT"
       }
     ]
@@ -4944,14 +4740,6 @@
       {
         "exchange": "htx",
         "symbol": "TRX/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "TRX/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "TRX/USDC"
       }
     ]
   },
@@ -5072,10 +4860,6 @@
       {
         "exchange": "htx",
         "symbol": "UNI/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "UNI/USDT"
       }
     ]
   },
@@ -5159,10 +4943,6 @@
       },
       {
         "exchange": "htx",
-        "symbol": "USDC/USDT"
-      },
-      {
-        "exchange": "lbank",
         "symbol": "USDC/USDT"
       }
     ]
@@ -5304,10 +5084,6 @@
       {
         "exchange": "htx",
         "symbol": "WIF/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "WIF/USDT"
       }
     ]
   },
@@ -5367,10 +5143,6 @@
       },
       {
         "exchange": "htx",
-        "symbol": "XDC/USDT"
-      },
-      {
-        "exchange": "lbank",
         "symbol": "XDC/USDT"
       }
     ]
@@ -5487,10 +5259,6 @@
       },
       {
         "exchange": "htx",
-        "symbol": "XLM/USDT"
-      },
-      {
-        "exchange": "lbank",
         "symbol": "XLM/USDT"
       }
     ]
@@ -5632,14 +5400,6 @@
       {
         "exchange": "htx",
         "symbol": "XRP/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "XRP/USDT"
-      },
-      {
-        "exchange": "lbank",
-        "symbol": "XRP/USDC"
       }
     ]
   }
