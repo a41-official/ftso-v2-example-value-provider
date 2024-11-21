@@ -18,7 +18,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "test:ve": "ts-node ./tests/get-voting-epoch.ts"
+    "get-feed-values": "ts-node ./tests/get-feed-values.ts",
+    "get-voting-epoch": "ts-node ./tests/get-voting-epoch.ts"
   },
   "engines": {
     "node": "18"

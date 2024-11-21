@@ -56,4 +56,5 @@ pids
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # Test files
-output.txt
+feed-values.txt
+voting-epoch.txt
