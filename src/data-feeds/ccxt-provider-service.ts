@@ -1,5 +1,5 @@
 import { Logger } from "@nestjs/common";
-import ccxt, { Exchange, Ticker, Tickers, Trade } from "ccxt";
+import ccxt, { Dictionary, Exchange, Ticker, Tickers, Trade } from "ccxt";
 import { readFileSync } from "fs";
 import { FeedId, FeedValueData } from "../dto/provider-requests.dto";
 import { BaseDataFeed } from "./base-feed";
@@ -16,7 +16,8 @@ enum FeedCategory {
 }
 
 const CONFIG_PREFIX = "src/config/";
-const RETRY_OFFSET_MS = 100;
+const RETRY_TRADES_MS = 100;
+const RETRY_TICKERS_MS = 60 * 1000;
 const RETRY_BACKOFF_MS = 10_000;
 const QUERY_LIMIT = 50;
 
@@ -35,6 +36,12 @@ interface PriceInfo {
   amount: number;
 }
 
+interface VolumeInfo {
+  volume: number;
+  time: number;
+  exchange: string;
+}
+
 const usdtToUsdFeedId: FeedId = { category: FeedCategory.Crypto.valueOf(), name: "USDT/USD" };
 const usdcToUsdFeedId: FeedId = { category: FeedCategory.Crypto.valueOf(), name: "USDC/USD" };
 const daiToUsdFeedId: FeedId = { category: FeedCategory.Crypto.valueOf(), name: "DAI/USD" };
@@ -48,6 +55,9 @@ export class CcxtFeed implements BaseDataFeed {
 
   /** Symbol -> Exchange -> Price */
   private readonly prices: Map<string, Map<string, PriceInfo>> = new Map();
+
+  /** Symbol -> Exchange -> Volume */
+  private readonly volumes: Map<string, Map<string, VolumeInfo>> = new Map();
 
   async start() {
     this.config = this.loadConfig();
@@ -72,6 +82,7 @@ export class CcxtFeed implements BaseDataFeed {
 
       let marketIds: string[] = this.getMarketIds(exchange, symbols);
       void this.watchTrades(exchange, marketIds, exchangeName);
+      void this.watchTickers(exchange, marketIds, exchangeName);
     }
   }
 
@@ -121,8 +132,8 @@ export class CcxtFeed implements BaseDataFeed {
     }
 
     if (exchange.has["watchTrades"]) {
-      // eslint-disable-next-line no-constant-condition
       (async () => {
+        // eslint-disable-next-line no-constant-condition
         while (true) {
           try {
             const trades: Trade[] = [];
@@ -132,7 +143,7 @@ export class CcxtFeed implements BaseDataFeed {
             }
 
             this.processTrades(trades, exchangeName);
-            await sleepFor(RETRY_OFFSET_MS);
+            await sleepFor(RETRY_TRADES_MS);
           } catch (e) {
             this.logger.error(`Failed to watch trades for ${exchange.name}: ${e}`);
             await sleepFor(RETRY_BACKOFF_MS);
@@ -142,8 +153,8 @@ export class CcxtFeed implements BaseDataFeed {
     }
     
     if (exchange.has["watchTradesForSymbols"]) {
-      // eslint-disable-next-line no-constant-condition
       (async () => {
+        // eslint-disable-next-line no-constant-condition
         while (true) {
           try {
             const trades = await retry(
@@ -152,7 +163,7 @@ export class CcxtFeed implements BaseDataFeed {
             );
 
             this.processTrades(trades, exchangeName);
-            await sleepFor(RETRY_OFFSET_MS);
+            await sleepFor(RETRY_TRADES_MS);
           } catch (e) {
             this.logger.error(`Failed to watch trades for ${exchange.name}: ${e}`);
             await sleepFor(RETRY_BACKOFF_MS);
@@ -162,8 +173,8 @@ export class CcxtFeed implements BaseDataFeed {
     }
     
     if (exchange.has["fetchTrades"]) {
-      // eslint-disable-next-line no-constant-condition
       (async () => {
+        // eslint-disable-next-line no-constant-condition
         while (true) {
           try {
             const trades: Trade[] = [];
@@ -176,7 +187,7 @@ export class CcxtFeed implements BaseDataFeed {
             }
 
             this.processTrades(trades, exchangeName);
-            await sleepFor(RETRY_OFFSET_MS);
+            await sleepFor(RETRY_TRADES_MS);
           } catch (e) {
             this.logger.error(`Failed to fetch trades for ${exchange.name}: ${e}`);
             await sleepFor(RETRY_BACKOFF_MS);
@@ -201,6 +212,66 @@ export class CcxtFeed implements BaseDataFeed {
     }
   }
 
+  private async watchTickers(exchange: Exchange, marketIds: string[], exchangeName: string) {
+    if (marketIds.length === 0) {
+      return;
+    }
+
+    if (exchange.has["watchTickers"]) {
+      (async () => {
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          try {
+            const tickers = await retry(
+              async () => exchange.watchTickers(marketIds),
+              RETRY_BACKOFF_MS
+            );
+
+            this.processTickers(tickers, exchangeName);
+            await sleepFor(RETRY_TICKERS_MS);
+          } catch (e) {
+            this.logger.error(`Failed to watch trades for ${exchange.name}: ${e}`);
+            await sleepFor(RETRY_BACKOFF_MS);
+          }
+        }
+      })()
+    }
+
+    if (exchange.has["fetchTickers"]) {
+      (async () => {
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          try {
+            const tickers = await retry(
+              async () => exchange.fetchTickers(marketIds),
+              RETRY_BACKOFF_MS
+            );
+
+            this.processTickers(tickers, exchangeName);
+            await sleepFor(RETRY_TICKERS_MS);
+          } catch (e) {
+            this.logger.error(`Failed to watch trades for ${exchange.name}: ${e}`);
+            await sleepFor(RETRY_BACKOFF_MS);
+          }
+        }
+      })()
+    }
+  }
+
+  private async processTickers(tickers: Dictionary<Ticker>, exchangeName: string) {
+    for (const ticker of Object.values(tickers)) {
+      let unifiedSymbol: string = ticker.symbol.match(/^([a-zA-Z0-9]+\/[a-zA-Z0-9]+).*$/)[1];
+      const volumes = this.volumes.get(unifiedSymbol) || new Map<string, VolumeInfo>();
+
+      volumes.set(exchangeName, {
+        volume: ticker.quoteVolume,
+        time: ticker.timestamp,
+        exchange: exchangeName,
+      });
+      this.volumes.set(unifiedSymbol, volumes);
+    }
+  }
+
   async getValues(feeds: FeedId[]): Promise<FeedValueData[]> {
     const promises = feeds.map(feed => this.getValue(feed));
     return Promise.all(promises);
@@ -221,80 +292,89 @@ export class CcxtFeed implements BaseDataFeed {
       return undefined;
     }
 
-    // For handling various quote currencies
-    const pricesBySymbol: Map<string, number[]> = new Map();
-
-    // Gather all available prices
+    // For handling various quote currencies with price and volume info
+    const symbolToInfos: Map<string, Array<[number, number]>> = new Map();
     for (const source of config.sources) {
-      const info = this.prices.get(source.symbol)?.get(source.exchange);
-      if (!info || info.amount === undefined)
+      const priceInfo = this.prices.get(source.symbol)?.get(source.exchange);
+      if (!priceInfo || priceInfo.amount === undefined)
         continue;
 
-      const prices = pricesBySymbol.get(source.symbol) || [];
-      prices.push(info.price);
-      pricesBySymbol.set(source.symbol, prices);
+      const volumeInfo = this.volumes.get(source.symbol)?.get(source.exchange);
+      if (!volumeInfo || volumeInfo.volume == undefined)
+        continue;
+
+      const infos: Array<[number, number]> = symbolToInfos.get(source.symbol) || new Array();
+      infos.push([priceInfo.price, volumeInfo.volume]);
+      symbolToInfos.set(source.symbol, infos);
     }
 
-    let usdtToUsd: number | undefined;
-    let usdcToUsd: number | undefined;
-    let daiToUsd: number | undefined;
-
     // Adjust for USDx to USD if needed
-    const usdPrices: number[] = [];
-    for (const [symbol, prices] of pricesBySymbol) {
-      let mappedPrices: number[];
+    const usdPriceVolume: Array<[number, number]> = new Array();
+    for (const [symbol, infos] of symbolToInfos) {
+      let mapped: Array<[number, number]> = new Array();
 
       if (symbol.endsWith("USD")) {
-        mappedPrices = prices;
+        mapped = infos;
       }
 
-      if (symbol.endsWith("USDT")) {
-        if (usdtToUsd === undefined)
-          usdtToUsd = await this.getFeedPrice(usdtToUsdFeedId);
-        if (usdtToUsd === undefined) {
-          this.logger.warn(`Unable to retrieve USDT to USD conversion rate for ${symbol}`);
-          continue;
-        }
-        mappedPrices = prices.map((price) => price * usdtToUsd);
-      }
-      
       if (symbol.endsWith("USDC")) {
-        if (usdcToUsd === undefined)
-          usdcToUsd = await this.getFeedPrice(usdcToUsdFeedId);
+        const usdcToUsd = await this.getFeedPrice(usdcToUsdFeedId);
         if (usdcToUsd === undefined) {
           this.logger.warn(`Unable to retrieve USDC to USD conversion rate for ${symbol}`);
           continue;
         }
-        mappedPrices = prices.map((price) => price * usdcToUsd);
+        mapped = infos.map(([price, volume]) => [price*usdcToUsd, volume*usdcToUsd]);
       }
-      
+
+      if (symbol.endsWith("USDT")) {
+        const usdtToUsd = await this.getFeedPrice(usdtToUsdFeedId);
+        if (usdtToUsd === undefined) {
+          this.logger.warn(`Unable to retrieve USDT to USD conversion rate for ${symbol}`);
+          continue;
+        }
+        mapped = infos.map(([price, volume]) => [price*usdtToUsd, volume*usdtToUsd]);
+      }
+
       if (symbol.endsWith("DAI")) {
-        if (daiToUsd === undefined)
-          daiToUsd = await this.getFeedPrice(daiToUsdFeedId);
+        const daiToUsd = await this.getFeedPrice(daiToUsdFeedId);
         if (daiToUsd === undefined) {
           this.logger.warn(`Unable to retrieve DAI to USD conversion rate for ${symbol}`);
           continue;
         }
-        mappedPrices = prices.map((price) => price * daiToUsd);
+        mapped = infos.map(([price, volume]) => [price*daiToUsd, volume*daiToUsd]);
       }
 
-      usdPrices.push(...mappedPrices);
+      usdPriceVolume.push(...mapped);
     }
 
     // If no valid prices were found, return undefined
-    if (usdPrices.length === 0) {
+    if (usdPriceVolume.length === 0) {
       this.logger.warn(`Unable to calculate median for ${JSON.stringify(feedId)}`);
-      return undefined;
+      return undefined;      
     }
 
-    usdPrices.sort((a, b) => a - b);
-    const mid = Math.floor(usdPrices.length / 2);
-    const median =
-    usdPrices.length % 2 !== 0
-        ? usdPrices[mid] // Odd number of elements, take the middle one
-        : (usdPrices[mid - 1] + usdPrices[mid]) / 2; // Even number of elements, average the two middle ones
+    // Sort by price ascending
+    usdPriceVolume.sort((x, y) => x[0] - y[0]);
 
-    return median;
+    // Calculate a sum of volume
+    let totalVolume = 0;
+    for (const [, volume] of usdPriceVolume)
+      totalVolume += volume;
+
+    // Find wieghted median
+    let cumulativeVolume = 0;
+    for (const [price, volume] of usdPriceVolume) {
+      cumulativeVolume += volume;
+
+      if (cumulativeVolume >= totalVolume / 2)
+        return price;
+    }
+
+    // If fail to find weighted median, just return median
+    const mid = Math.floor(usdPriceVolume.length / 2);
+    return usdPriceVolume.length % 2 !== 0
+        ? usdPriceVolume[mid][0]
+        : (usdPriceVolume[mid-1][0] + usdPriceVolume[mid][0]) / 2;
   }
 
   private loadConfig() {
