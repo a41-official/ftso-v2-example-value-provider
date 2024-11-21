@@ -59,8 +59,59 @@ export class AggregatorFeed implements BaseDataFeed {
       }
       const coins = await response.json();
 
+      // predefine symbols that might duplicate
+      coinIds.set("flr", "flare-networks");
+      coinIds.set("sgb", "songbird");
+      coinIds.set("xrp", "ripple");
+      coinIds.set("ltc", "litecoin");
+      coinIds.set("xlm", "stellar");
+      coinIds.set("doge", "dogecoin");
+      coinIds.set("ada", "cardano");
+      coinIds.set("algo", "algorand");
+      coinIds.set("btc", "bitcoin");
+      coinIds.set("eth", "ethereum");
+      coinIds.set("fil", "filecoin");
+      coinIds.set("arb", "arbitrum");
+      coinIds.set("avax", "avalanche-2");
+      coinIds.set("bnb", "binancecoin");
+      coinIds.set("matic", "polygon");
+      coinIds.set("pol", "polygon-ecosystem-token");
+      coinIds.set("sol", "solana");
+      coinIds.set("usdc", "usd-coin");
+      coinIds.set("usdt", "tether");
+      coinIds.set("xdc", "xdce-crowd-sale");
+      coinIds.set("trx", "tron");
+      coinIds.set("dot", "polkadot");
+      coinIds.set("link", "chainlink");
+      coinIds.set("icp", "internet-computer");
+      coinIds.set("shib", "shiba-inu");
+      coinIds.set("bch", "bitcoin-cash");
+      coinIds.set("atom", "cosmos");
+      coinIds.set("uni", "uniswap");
+      coinIds.set("etc", "ethereum-classic");
+      coinIds.set("inj", "injective");
+      coinIds.set("ton", "toncoin");
+      coinIds.set("dai", "dai");
+      coinIds.set("near", "near");
+      coinIds.set("leo", "leo-token");
+      coinIds.set("bonk", "bonk");
+      coinIds.set("jup", "jupiter");
+      coinIds.set("hnt", "helium");
+      coinIds.set("sui", "sui");
+      coinIds.set("pepe", "pepe");
+      coinIds.set("qnt", "quant-network");
+      coinIds.set("aave", "aave");
+      coinIds.set("ftm", "fantom");
+      coinIds.set("ondo", "ondo-finance");
+      coinIds.set("tao", "bittensor");
+      coinIds.set("fet", "fetch-ai");
+      coinIds.set("render", "render-token");
+      coinIds.set("rune", "thorchain");
+
       for (const coin of coins) {
-        coinIds.set(coin.symbol, coin.id);
+        if (!coinIds.get(coin.symbol)) {
+          coinIds.set(coin.symbol, coin.id);
+        }
       }
     } catch (e) {
       this.logger.error(e);
