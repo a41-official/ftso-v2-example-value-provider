@@ -11,6 +11,7 @@ const MAX_RETRIES = 3;
 const RETRY_BACKOFF_MS = 2_000;
 const VOTING_EPOCH_INTERVAL_SEC = 90;
 const VOTING_EPOCH_EARLY_OFFSET_SEC = 6;
+const AGGREGATOR_PRECISION = 11;
 
 interface FeedConfig {
   feed: FeedId;
@@ -98,7 +99,8 @@ export class AggregatorFeed implements BaseDataFeed {
         const markets = await retry(
           async () => {
             const response = await fetch(
-              COINGECKO_API_URL + `coins/markets?vs_currency=usd&ids=${coingekcoIds.join(",")}`,
+              COINGECKO_API_URL +
+                `coins/markets?vs_currency=usd&precision=${AGGREGATOR_PRECISION}&ids=${coingekcoIds.join(",")}`,
               {
                 method: "GET",
                 headers: {
