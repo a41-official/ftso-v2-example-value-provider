@@ -82,3 +82,18 @@ curl -X 'POST' \
   ]
 }
 ```
+
+## Run tests
+
+### Get current local feeds
+```bash
+# yarn get-feed-values [urls...]
+yarn get-feed-values http://127.0.0.1:3101/feed-values http://127.0.0.1:3102/feed-values
+```
+outputs saved to : `./feed-values.txt`
+### Get voting epoch feeds
+```bash
+# yarn get-voting-epoch <voting_epoch_id>
+yarn get-voting-epoch 819322
+```
+outputs saved to : `./voting-epoch.txt`
