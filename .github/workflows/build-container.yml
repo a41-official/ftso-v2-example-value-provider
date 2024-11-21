@@ -35,4 +35,4 @@ jobs:
         platforms: linux/amd64,linux/arm64
         push: true
         tags: |
-          ${{ secrets.DOCKER_HUB_USERNAME }}/ftso-v2-example-value-provider:${{ env.IMAGE_TAG }}
+          ${{ secrets.DOCKER_HUB_ORGANIZATION_NAME }}/ftso-v2-example-value-provider:${{ env.IMAGE_TAG }}
