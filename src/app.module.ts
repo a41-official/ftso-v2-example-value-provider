@@ -1,13 +1,14 @@
-import { Module } from "@nestjs/common";
+import { forwardRef, Module } from "@nestjs/common";
 import { ExampleProviderService } from "./app.service";
 import { ExampleProviderController } from "./app.controller";
 import { CcxtFeed } from "./data-feeds/ccxt-provider-service";
 import { RandomFeed } from "./data-feeds/random-feed";
 import { BaseDataFeed } from "./data-feeds/base-feed";
 import { FixedFeed } from "./data-feeds/fixed-feed";
+import { MedianModule } from "./median/median.module";
 
 @Module({
-  imports: [],
+  imports: [forwardRef(() => MedianModule)],
   controllers: [ExampleProviderController],
   providers: [
     {
@@ -30,5 +31,6 @@ import { FixedFeed } from "./data-feeds/fixed-feed";
       },
     },
   ],
+  exports: ["EXAMPLE_PROVIDER_SERVICE"],
 })
 export class RandomExampleProviderModule {}

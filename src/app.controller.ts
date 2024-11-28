@@ -1,9 +1,11 @@
-import { Body, Controller, Param, ParseIntPipe, Post, Inject, Logger } from "@nestjs/common";
+import { Body, Controller, Param, ParseIntPipe, Post, Inject, Logger, UseInterceptors } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { ExampleProviderService } from "./app.service";
 import { FeedValuesRequest, FeedValuesResponse, RoundFeedValuesResponse } from "./dto/provider-requests.dto";
+import { FeedCalibrationInterceptor } from "./median/interceptors/feed-calibration.interceptor";
 
 @ApiTags("Feed Value Provider API")
+@UseInterceptors(FeedCalibrationInterceptor)
 @Controller()
 export class ExampleProviderController {
   private logger = new Logger(ExampleProviderController.name);
