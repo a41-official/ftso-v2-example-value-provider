@@ -29,4 +29,13 @@ type FeedResponseNormalized = {
   secondaryHigh: number;
 };
 
+type ProviderFeedVoteResponse = {
+  feed: {
+    representation: string;
+    feed_name: string;
+  };
+  voting_round_id: number;
+  value: number;
+};
+
 type networks = "local-test" | "from-env" | "coston2" | "coston" | "songbird";

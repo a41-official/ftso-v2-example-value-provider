@@ -1,7 +1,6 @@
 import { Inject, Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { readFileSync } from "fs";
 import { ExampleProviderService } from "src/app.service";
-import { FeedValueData } from "src/dto/provider-requests.dto";
 import { sleepFor } from "src/utils/retry";
 
 const CONFIG_PREFIX = "src/config/";
@@ -12,17 +11,23 @@ export class MedianDeltaCalculatorService implements OnModuleInit {
   private readonly baseVotingEpochTs = 1658430000; // 2022-11-21T00:00:00Z in Unix timestamp
   private readonly votingEpochInterval = 90;
   private readonly votingEpochSnapshotOffset = 15; // Save feed values on -15 seconds of the voting epoch
-  private readonly deltaCalculationTimeout = 5;
+  private readonly deltaCalculationTimeout = 20;
   private readonly feedApiUrl = "https://flare-systems-explorer.flare.network/backend-url/api/v0/";
+  private readonly identityAddress = removeHexPrefix(process.env.IDENTITY_ADDRESS || ""); // Identity address to fetch provider feed votes
 
   private readonly feedItems: JsonFeedItem[] = [];
   private readonly deltaByName: Map<string, number> = new Map();
-  private readonly submittedFeedValues: Map<number, FeedValueData[]> = new Map();
 
   constructor(
     @Inject("EXAMPLE_PROVIDER_SERVICE")
     private readonly exampleProviderService: ExampleProviderService
   ) {
+    const isEnabled = process.env.FEED_CALIBRATION_ENABLED === "true";
+    if (isEnabled && !this.identityAddress) {
+      this.logger.error("Identity address is not set");
+      process.exit(1);
+    }
+
     // Initialize the delta map with 0 for each feed
     this.feedItems = this.loadConfig();
 
@@ -39,7 +44,6 @@ export class MedianDeltaCalculatorService implements OnModuleInit {
     this.logger.log("Starting median delta calculator service");
 
     void this.startMedianPolling();
-    void this.startSnapshotLoop();
   }
 
   // 1. Fetch median feed values of the feed values saved on the previous step
@@ -49,57 +53,43 @@ export class MedianDeltaCalculatorService implements OnModuleInit {
 
     // eslint-disable-next-line no-constant-condition
     while (true) {
-      // Calculate the delay to the next voting epoch. Aim to save feed values on -15 seconds of the voting epoch
-      const elapsed = this.secondsSinceMidnight();
-      const delay =
-        this.votingEpochInterval -
-        (elapsed % this.votingEpochInterval) -
-        this.votingEpochSnapshotOffset -
-        this.deltaCalculationTimeout;
-      const adjustedDelay = delay <= 0 ? delay + this.votingEpochInterval : delay;
-
-      // Wait for the next voting epoch
-      this.logger.log(`Median Polling | Waiting ${adjustedDelay} seconds before starting polling...`);
-      await sleepFor(adjustedDelay * 1000);
-
       const prevVotingEpochId = this.getCurrentVotingEpochId() - 1;
-
-      if (!this.submittedFeedValues[prevVotingEpochId]) {
-        this.logger.log(
-          `Median Polling | Last submitted feed values for ${prevVotingEpochId} not found. Skipping this round...`
-        );
-        continue;
-      }
-
-      const cachedLastSubmittedFeedValues = this.submittedFeedValues[prevVotingEpochId];
 
       try {
         // 1. Calculate delta from the last submitted feed values (if exists)
         const { fromTs, toTs } = this.getVotingEpochRange(prevVotingEpochId);
 
         // Fetch data for all feeds in parallel
-        const apiPromises = this.feedItems.map(feed =>
+        const medianPromises = this.feedItems.map(feed =>
           this.fetchFtsoFeed(feed.feed.name, fromTs, toTs, prevVotingEpochId)
         );
-        const apiResults = await Promise.all(apiPromises);
-        const filteredApiResults = apiResults.filter(item => item);
-
-        if (filteredApiResults.length === 0) {
+        const medianResults = await Promise.all(medianPromises);
+        const filteredMedianResults = medianResults.filter(item => item);
+        if (filteredMedianResults.length === 0) {
           this.logger.error(`Median Polling | No data found for any feed in voting epoch ${prevVotingEpochId}`);
           continue;
         }
 
+        await sleepFor(5000); // Sleep for 5 second to avoid rate limiting
+
+        // Fetch provider feed votes
+        const providerFeedVotePromises = filteredMedianResults.map(feed =>
+          this.fetchProviderFeedVote(feed.name, fromTs, toTs, prevVotingEpochId)
+        );
+        const providerFeedVoteResults = await Promise.all(providerFeedVotePromises);
+        const filteredProviderFeedVoteResults = providerFeedVoteResults.filter(item => item);
+
         // 2. Update delta map
-        apiResults.forEach(feed => {
+        medianResults.forEach(feed => {
           if (!feed) return;
 
-          const lastSubmittedFeed = cachedLastSubmittedFeedValues.find(item => item.feed.name === feed.name);
-          if (!lastSubmittedFeed) {
-            this.logger.warn(`Median Polling | No last submitted feed found for ${feed.name}`);
+          const lastVotedFeed = filteredProviderFeedVoteResults.find(item => item.feed.representation === feed.name);
+          if (!lastVotedFeed) {
+            this.logger.warn(`Median Polling | No last voted feed found for ${feed.name}`);
             return;
           }
 
-          const delta = feed.median - lastSubmittedFeed.value;
+          const delta = feed.median - lastVotedFeed.value;
           this.deltaByName.set(feed.name, delta);
         });
 
@@ -111,39 +101,20 @@ export class MedianDeltaCalculatorService implements OnModuleInit {
         await sleepFor(10_000);
       }
 
-      // Wait for the next voting epoch
-      this.logger.log(`Waiting ${adjustedDelay} seconds before starting polling...`);
-      await sleepFor(adjustedDelay * 1000);
-    }
-  }
+      console.log(this.deltaByName);
 
-  // 1. Save local feed values on every -15 seconds of the voting epoch
-  async startSnapshotLoop() {
-    this.logger.log("Snapshot Loop | Starting current feed values snapshot loop");
-
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      // Calculate the delay to the next voting epoch. Aim to save feed values on -15 seconds of the voting epoch
+      // Calculate the delay to the next voting epoch. Aim to calculate delta on -15 seconds of the voting epoch
       const elapsed = this.secondsSinceMidnight();
-      const delay = this.votingEpochInterval - (elapsed % this.votingEpochInterval) - this.votingEpochSnapshotOffset;
+      const delay =
+        this.votingEpochInterval -
+        (elapsed % this.votingEpochInterval) -
+        this.votingEpochSnapshotOffset -
+        this.deltaCalculationTimeout;
       const adjustedDelay = delay <= 0 ? delay + this.votingEpochInterval : delay;
 
       // Wait for the next voting epoch
-      this.logger.log(`Snapshot Loop | Waiting ${adjustedDelay} seconds before starting polling...`);
+      this.logger.log(`Median Polling | Waiting ${adjustedDelay} seconds before next fetch...`);
       await sleepFor(adjustedDelay * 1000);
-
-      const targetVotingEpochId = this.getCurrentVotingEpochId() + 1;
-
-      try {
-        await this.updateLastSubmittedFeedValues(targetVotingEpochId);
-
-        this.logger.log(
-          `Snapshot Loop | Updated ${this.submittedFeedValues[targetVotingEpochId].length} last submitted feed values for voting epoch ${targetVotingEpochId}`
-        );
-      } catch (e) {
-        this.logger.error(`${e}`);
-        await sleepFor(10_000);
-      }
     }
   }
 
@@ -206,10 +177,37 @@ export class MedianDeltaCalculatorService implements OnModuleInit {
     }
   }
 
-  async updateLastSubmittedFeedValues(currentVotingEpochId: number) {
-    const feedValues = await this.exampleProviderService.getValues(this.feedItems.map(item => item.feed));
-    this.submittedFeedValues[currentVotingEpochId] = feedValues;
-    this.submittedFeedValues.delete(currentVotingEpochId - 2);
+  // Fetch data of provider feed vote
+  async fetchProviderFeedVote(
+    name: string,
+    fromTs: number,
+    toTs: number,
+    targetVotingRoundId: number
+  ): Promise<ProviderFeedVoteResponse | undefined> {
+    const feedName = this.convertToFeedName(name);
+    const apiUrl = `${this.feedApiUrl}/provider_feed_vote?feed_name=${feedName}&entity=${this.identityAddress}&from_ts=${fromTs}&to_ts=${toTs}`;
+
+    try {
+      const response = await fetch(apiUrl);
+      if (!response.ok) throw new Error(`Error fetching data for ${name}: ${response.statusText}`);
+
+      const data: ProviderFeedVoteResponse[] = await response.json();
+      if (!data.length) {
+        this.logger.warn(`No data found for ${name}`);
+        return;
+      }
+
+      const item = data.find(item => item.voting_round_id === targetVotingRoundId);
+      if (!item) {
+        this.logger.warn(`No data found for ${name} in voting round ${targetVotingRoundId}`);
+        return;
+      }
+
+      return item;
+    } catch (error) {
+      this.logger.error(`Error processing ${name}:`, error);
+      return;
+    }
   }
 
   // Helper function to calculate time range for a given voting epoch
@@ -258,4 +256,11 @@ export class MedianDeltaCalculatorService implements OnModuleInit {
       throw err;
     }
   }
+}
+
+function removeHexPrefix(address: string) {
+  if (address.startsWith("0x")) {
+    return address.slice(2);
+  }
+  return address;
 }
