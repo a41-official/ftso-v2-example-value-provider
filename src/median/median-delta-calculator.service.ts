@@ -53,6 +53,19 @@ export class MedianDeltaCalculatorService implements OnModuleInit {
 
     // eslint-disable-next-line no-constant-condition
     while (true) {
+      // Calculate the delay to the next voting epoch. Aim to calculate delta on -15 seconds of the voting epoch
+      const elapsed = this.secondsSinceMidnight();
+      const delay =
+        this.votingEpochInterval -
+        (elapsed % this.votingEpochInterval) -
+        this.votingEpochSnapshotOffset -
+        this.deltaCalculationTimeout;
+      const adjustedDelay = delay <= 0 ? delay + this.votingEpochInterval : delay;
+
+      // Wait for the next voting epoch
+      this.logger.log(`Median Polling | Waiting ${adjustedDelay} seconds before next fetch...`);
+      await sleepFor(adjustedDelay * 1000);
+
       const prevVotingEpochId = this.getCurrentVotingEpochId() - 1;
 
       try {
@@ -100,19 +113,6 @@ export class MedianDeltaCalculatorService implements OnModuleInit {
         this.logger.error(`${e}`);
         await sleepFor(10_000);
       }
-
-      // Calculate the delay to the next voting epoch. Aim to calculate delta on -15 seconds of the voting epoch
-      const elapsed = this.secondsSinceMidnight();
-      const delay =
-        this.votingEpochInterval -
-        (elapsed % this.votingEpochInterval) -
-        this.votingEpochSnapshotOffset -
-        this.deltaCalculationTimeout;
-      const adjustedDelay = delay <= 0 ? delay + this.votingEpochInterval : delay;
-
-      // Wait for the next voting epoch
-      this.logger.log(`Median Polling | Waiting ${adjustedDelay} seconds before next fetch...`);
-      await sleepFor(adjustedDelay * 1000);
     }
   }
 
