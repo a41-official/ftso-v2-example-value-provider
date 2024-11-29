@@ -101,8 +101,6 @@ export class MedianDeltaCalculatorService implements OnModuleInit {
         await sleepFor(10_000);
       }
 
-      console.log(this.deltaByName);
-
       // Calculate the delay to the next voting epoch. Aim to calculate delta on -15 seconds of the voting epoch
       const elapsed = this.secondsSinceMidnight();
       const delay =
